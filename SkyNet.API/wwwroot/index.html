@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyNet — Global Aviatsiya Tizimi</title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: calc(100vh - 52px); width: 100%; }
+    .map-panel {
+      position: absolute; top: 68px; left: 12px; z-index: 900;
+      background: rgba(13,17,23,0.92); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px; width: 300px;
+    }
+    .ac-wrap { position: relative; flex: 1; }
+    .ac-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 9999;
+      background: #1e2733; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; max-height: 180px; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .ac-item {
+      padding: 7px 10px; cursor: pointer; font-size: 0.78rem;
+      display: flex; gap: 8px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .ac-item:hover { background: rgba(37,99,235,0.25); }
+    .ac-code { font-weight: 700; color: #0ea5e9; min-width: 32px; font-size: 0.82rem; }
+    .map-panel h3 { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .map-panel .row { display: flex; gap: 6px; margin-bottom: 8px; }
+    .map-panel .row input { flex: 1; }
+    .route-result {
+      position: absolute; bottom: 24px; left: 12px; z-index: 900;
+      background: rgba(13,17,23,0.92); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px; width: 280px; display: none;
+    }
+    .route-result .path { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .route-result .node {
+      background: rgba(37,99,235,0.2); color: var(--accent2);
+      border-radius: 4px; padding: 2px 8px; font-size: 0.78rem; font-weight: 600;
+    }
+    .route-result .arrow { color: var(--muted); align-self: center; font-size: 0.7rem; }
+    .legend {
+      position: absolute; bottom: 24px; right: 12px; z-index: 900;
+      background: rgba(13,17,23,0.92); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 14px; font-size: 0.75rem;
+    }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .loading-overlay {
+      position: fixed; inset: 0; background: var(--bg); z-index: 9998;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px;
+    }
+    .loading-overlay .logo { font-size: 2rem; font-weight: 700; color: var(--accent2); letter-spacing: 4px; }
+    .loading-overlay .sub  { color: var(--muted); font-size: 0.85rem; }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent2); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="loading" class="loading-overlay">
+  <div class="logo">✈ SKYNET</div>
+  <div class="spinner"></div>
+  <div class="sub">Global aeroport tarmog'i yuklanmoqda...</div>
+</div>
+
+<nav class="nav">
+  <span class="nav-logo">✈ SKYNET</span>
+  <a href="/" class="active">🗺 Xarita</a>
+  <a href="/dashboard.html">📊 Boshqaruv</a>
+  <a href="/search.html">🔍 Qidiruv</a>
+  <a href="/checkin.html">🎫 Ro'yxat</a>
+  <div class="nav-right">
+    <span class="status-dot"></span>
+    <span id="airport-count" style="color:var(--muted);font-size:0.75rem">Yuklanmoqda...</span>
+  </div>
+</nav>
+
+<div class="page" style="position:relative">
+  <div id="map"></div>
+
+  <!-- Route Finder Panel -->
+  <div class="map-panel">
+    <h3>🔍 Marshrut qidirish — Dijkstra</h3>
+    <div class="row">
+      <div class="ac-wrap">
+        <input class="input" id="from" placeholder="Qayerdan (TAS, London...)" autocomplete="off"
+          oninput="mapAC('from','fromDrop')" onkeydown="acKey(event,'from','fromDrop')" />
+        <div class="ac-dropdown" id="fromDrop" style="display:none"></div>
+      </div>
+      <div class="ac-wrap">
+        <input class="input" id="to" placeholder="Qayerga (LHR, Dubai...)" autocomplete="off"
+          oninput="mapAC('to','toDrop')" onkeydown="acKey(event,'to','toDrop')" />
+        <div class="ac-dropdown" id="toDrop" style="display:none"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="findRoute()">Eng qisqa yo'lni top</button>
+    <button class="btn btn-ghost"   style="width:100%;margin-bottom:8px" onclick="showMST()">MST tarmog'ini ko'rsat</button>
+    <button class="btn btn-ghost"   style="width:100%" onclick="clearMap()">Tozalash</button>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <h3 style="margin-bottom:6px">🚫 Aeroportni yopish</h3>
+      <div class="row">
+        <input class="input" id="closeAirport" placeholder="IATA kodi" maxlength="4" />
+        <button class="btn btn-danger" onclick="closeAirport()">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Route Result -->
+  <div class="route-result" id="routeResult">
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px">Dijkstra — Eng qisqa marshrut</div>
+    <div id="routeStats" style="font-size:0.85rem"></div>
+    <div class="path" id="routePath"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-row"><div class="legend-dot" style="background:#60a5fa"></div>Aeroport</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#f59e0b"></div>Yirik tugun</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#ef4444"></div>Yopiq</div>
+    <div class="legend-row"><div style="width:20px;height:2px;background:#2563eb"></div>Reys yo'nalishi</div>
+    <div class="legend-row"><div style="width:20px;height:2px;background:#22c55e"></div>Dijkstra yo'li</div>
+    <div class="legend-row"><div style="width:20px;height:2px;background:#f59e0b;border-top:2px dashed #f59e0b"></div>MST</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/signalr.js"></script>
+<script src="/js/map.js"></script>
+</body>
+</html>

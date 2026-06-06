@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyNet — Qidiruv</title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:800px){ .search-grid{ grid-template-columns:1fr; } }
+    .autocomplete-list {
+      position: absolute; z-index: 100; background: var(--bg2);
+      border: 1px solid var(--border); border-radius: 6px;
+      max-height: 200px; overflow-y: auto; width: 100%;
+    }
+    .autocomplete-item {
+      padding: 8px 12px; cursor: pointer; font-size: 0.82rem;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .autocomplete-item:hover { background: var(--bg3); }
+    .ac-iata { font-weight: 700; color: var(--accent2); min-width: 36px; }
+    .result-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
+    }
+    .path-display {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px;
+    }
+    .path-node {
+      background: rgba(37,99,235,0.2); color: var(--accent2);
+      border-radius: 6px; padding: 4px 12px; font-weight: 700; font-size: 0.85rem;
+    }
+    .path-arrow { color: var(--muted); }
+    .pnr-result { padding: 12px; background: var(--bg3); border-radius: 8px; }
+    .pnr-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo">✈ SKYNET</span>
+  <a href="/">🗺 Xarita</a>
+  <a href="/dashboard.html">📊 Boshqaruv</a>
+  <a href="/search.html" class="active">🔍 Qidiruv</a>
+  <a href="/checkin.html">🎫 Ro'yxat</a>
+  <div class="nav-right"><span class="status-dot"></span></div>
+</nav>
+
+<div class="page">
+<div class="container">
+  <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:20px">🔍 Qidiruv va marshrut topish</h1>
+
+  <div class="search-grid">
+
+    <!-- Route Finder -->
+    <div class="card">
+      <div class="card-title">✈ Dijkstra marshrut topish</div>
+      <div style="position:relative;margin-bottom:8px">
+        <input class="input" id="acFrom" placeholder="Qayerdan (nom yoki IATA)" oninput="autocomplete('acFrom','acFromList')" autocomplete="off" />
+        <div class="autocomplete-list" id="acFromList" style="display:none"></div>
+      </div>
+      <div style="position:relative;margin-bottom:8px">
+        <input class="input" id="acTo" placeholder="Qayerga (nom yoki IATA)" oninput="autocomplete('acTo','acToList')" autocomplete="off" />
+        <div class="autocomplete-list" id="acToList" style="display:none"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="searchRoute()">Eng qisqa marshrutni top</button>
+      <div id="routeResult" style="margin-top:12px"></div>
+    </div>
+
+    <!-- PNR Lookup -->
+    <div class="card">
+      <div class="card-title">🪪 Yo'lovchi qidirish — HashTable O(1)</div>
+      <input class="input" id="pnrInput" placeholder="PNR (mas. SKY-100000)" style="margin-bottom:8px" />
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="lookupPNR()">PNR bo'yicha qidirish</button>
+      <input class="input" id="passportInput" placeholder="Pasport raqami" style="margin-bottom:8px" />
+      <button class="btn btn-ghost" style="width:100%" onclick="lookupPassport()">Pasport bo'yicha qidirish</button>
+      <div id="pnrResult" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Price Range -->
+    <div class="card">
+      <div class="card-title">💰 Narx bo'yicha qidirish — AVL Tree O(log n)</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="input" id="priceMin" type="number" placeholder="Min $" value="100" />
+        <input class="input" id="priceMax" type="number" placeholder="Max $" value="500" />
+        <button class="btn btn-primary" onclick="searchByPrice()">Qidirish</button>
+      </div>
+      <div class="table-wrap" style="max-height:240px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Reys</th><th>Yo'nalish</th><th>Narx</th><th>Holat</th></tr></thead>
+          <tbody id="priceResults"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Emergency Reroute -->
+    <div class="card">
+      <div class="card-title">🚨 Favqulodda qayta yo'naltirish — Backtracking</div>
+      <input class="input" id="reFrom" placeholder="Qayerdan" style="margin-bottom:8px" />
+      <input class="input" id="reTo"   placeholder="Qayerga"  style="margin-bottom:8px" />
+      <input class="input" id="reClosed" placeholder="Yopiq aeroport (IATA)" style="margin-bottom:8px" />
+      <button class="btn btn-danger" style="width:100%" onclick="findAlternatives()">Muqobil marshrutlarni top</button>
+      <div id="rerouteResult" style="margin-top:12px"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/signalr.js"></script>
+<script>
+let _acTimer = null;
+async function autocomplete(inputId, listId) {
+  const q    = document.getElementById(inputId).value.trim();
+  const list = document.getElementById(listId);
+  if (q.length < 2) { list.style.display = 'none'; return; }
+  clearTimeout(_acTimer);
+  _acTimer = setTimeout(async () => {
+    try {
+      const results = await API.airports.search(q);
+      if (!results || !results.length) { list.style.display = 'none'; return; }
+      list.innerHTML = results.map(a => `
+        <div class="autocomplete-item" onmousedown="selectAirport('${inputId}','${listId}','${a.iataCode}')">
+          <span class="ac-iata">${a.iataCode}</span>
+          <span>${a.name} — ${a.city}</span>
+        </div>
+      `).join('');
+      list.style.display = 'block';
+    } catch(e) { list.style.display = 'none'; }
+  }, 200);
+}
+
+function selectAirport(inputId, listId, iata) {
+  document.getElementById(inputId).value = iata;
+  document.getElementById(listId).style.display = 'none';
+}
+
+async function searchRoute() {
+  const rawFrom = document.getElementById('acFrom').value.trim().toUpperCase();
+  const rawTo   = document.getElementById('acTo').value.trim().toUpperCase();
+  const from = rawFrom.slice(0, 3);
+  const to   = rawTo.slice(0, 3);
+  if (!from || !to) { toast('Qayerdan va qayerga borishi kiritilsin', 'error'); return; }
+  try {
+    const r = await API.flights.getRoute(from, to);
+    const el = document.getElementById('routeResult');
+    if (!r.found) { el.innerHTML = '<div style="color:var(--red)">Marshrut topilmadi.</div>'; return; }
+    el.innerHTML = `
+      <div class="result-card">
+        <div style="font-size:0.75rem;color:var(--muted)">Algoritm: ${r.algorithm}</div>
+        <div style="margin:6px 0;font-size:0.9rem">
+          <b>${Math.round(r.totalDistance).toLocaleString()} km</b> &nbsp;·&nbsp;
+          <b>$${Math.round(r.totalCost)}</b> &nbsp;·&nbsp;
+          <b>${r.stops} to'xtash</b>
+        </div>
+        <div class="path-display">
+          ${r.path.map((n,i) => `${i>0?'<span class="path-arrow">→</span>':''}<span class="path-node">${n}</span>`).join('')}
+        </div>
+      </div>
+    `;
+    toast('Marshrut topildi!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function lookupPNR() {
+  const pnr = document.getElementById('pnrInput').value.trim();
+  if (!pnr) return;
+  try {
+    const p = await API.passengers.getByPNR(pnr);
+    showPassenger(p);
+  } catch(e) { document.getElementById('pnrResult').innerHTML = `<div style="color:var(--red)">${e.message}</div>`; }
+}
+
+async function lookupPassport() {
+  const id = document.getElementById('passportInput').value.trim();
+  if (!id) return;
+  try {
+    const p = await API.passengers.getByPassport(id);
+    showPassenger(p);
+  } catch(e) { document.getElementById('pnrResult').innerHTML = `<div style="color:var(--red)">${e.message}</div>`; }
+}
+
+function showPassenger(p) {
+  const cls = p.ticketClass.toLowerCase();
+  document.getElementById('pnrResult').innerHTML = `
+    <div class="pnr-result">
+      <div style="font-weight:700;margin-bottom:8px">${p.fullName} <span class="badge badge-${cls}">${p.ticketClass}</span></div>
+      <div class="pnr-row"><span>PNR</span><span>${p.pnr}</span></div>
+      <div class="pnr-row"><span>Pasport</span><span>${p.passportId}</span></div>
+      <div class="pnr-row"><span>Reys</span><span>${p.flightNumber}</span></div>
+      <div class="pnr-row"><span>Millat</span><span>${p.nationality}</span></div>
+      <div class="pnr-row"><span>Ro'yxatdan o'tgan</span><span>${p.isCheckedIn ? '✅' : '❌'}</span></div>
+      <div class="pnr-row" style="border:none"><span>Samolotga chiqdi</span><span>${p.isBoarded ? '✅' : '❌'}</span></div>
+    </div>
+  `;
+}
+
+async function searchByPrice() {
+  const min = +document.getElementById('priceMin').value;
+  const max = +document.getElementById('priceMax').value;
+  try {
+    const flights = await API.flights.byPrice(min, max);
+    document.getElementById('priceResults').innerHTML = flights.slice(0,30).map(f => `
+      <tr>
+        <td><b>${f.flightNumber}</b></td>
+        <td>${f.originIata} → ${f.destinationIata}</td>
+        <td><b>$${Math.round(f.price)}</b></td>
+        <td><span class="badge badge-active">${f.status}</span></td>
+      </tr>
+    `).join('');
+    toast(`${flights.length} ta reys topildi`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function findAlternatives() {
+  const from   = document.getElementById('reFrom').value.trim().toUpperCase();
+  const to     = document.getElementById('reTo').value.trim().toUpperCase();
+  const closed = document.getElementById('reClosed').value.trim().toUpperCase();
+  if (!from || !to || !closed) { toast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  try {
+    const r = await API.flights.reroute({ from, to, closedAirport: closed });
+    const el = document.getElementById('rerouteResult');
+    el.innerHTML = `
+      <div style="margin-bottom:8px;font-size:0.82rem;color:var(--muted)">${r.totalAlternatives} ta muqobil marshrut topildi</div>
+      ${r.routes.slice(0,5).map((rt,i) => `
+        <div class="result-card" style="margin-bottom:8px">
+          <div style="font-size:0.75rem;color:var(--muted)">Variant ${i+1} — ${rt.hops} oraliq</div>
+          <div class="path-display" style="margin-top:6px">
+            ${rt.path.map((n,j) => `${j>0?'<span class="path-arrow">→</span>':''}<span class="path-node">${n}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    `;
+    toast(`Favqulodda qayta yo'naltirish: ${r.totalAlternatives} ta marshrut`, 'error');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-item')) {
+    document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display='none');
+  }
+});
+</script>
+</body>
+</html>

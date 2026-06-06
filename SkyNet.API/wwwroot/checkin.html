@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyNet — Ro'yxatdan o'tish</title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    .checkin-grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
+    @media(max-width:900px){ .checkin-grid{ grid-template-columns:1fr; } }
+    .queue-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; background: var(--bg3);
+      border-radius: 8px; margin-bottom: 6px;
+      border-left: 4px solid transparent; transition: all 0.2s;
+    }
+    .queue-card.platinum { border-color: #c084fc; }
+    .queue-card.gold     { border-color: #fbbf24; }
+    .queue-card.economy  { border-color: #475569; }
+    .queue-pos { font-weight: 700; color: var(--muted); width: 20px; font-size: 0.8rem; }
+    .queue-name { flex: 1; font-weight: 600; font-size: 0.85rem; }
+    .cargo-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; background: var(--bg3);
+      border-radius: 6px; margin-bottom: 4px; font-size: 0.82rem;
+    }
+    .cargo-pos { color: var(--muted); font-size: 0.75rem; width: 20px; }
+    .section-title {
+      font-size: 0.78rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 16px 0 8px;
+    }
+    .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .form-row .input { flex: 1; }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo">✈ SKYNET</span>
+  <a href="/">🗺 Xarita</a>
+  <a href="/dashboard.html">📊 Boshqaruv</a>
+  <a href="/search.html">🔍 Qidiruv</a>
+  <a href="/checkin.html" class="active">🎫 Ro'yxat</a>
+  <div class="nav-right"><span class="status-dot"></span></div>
+</nav>
+
+<div class="page">
+<div class="container">
+  <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:20px">🎫 Ro'yxatdan o'tish va navbat boshqaruvi</h1>
+
+  <div class="checkin-grid">
+
+    <!-- Left: Forms -->
+    <div>
+      <!-- Check-in Form -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">👤 Yo'lovchi ro'yxati — Ustuvorlik navbati (MaxHeap)</div>
+        <div class="form-row">
+          <input class="input" id="fname" placeholder="Ism" />
+          <input class="input" id="lname" placeholder="Familiya" />
+        </div>
+        <input class="input" id="passport" placeholder="Pasport raqami" style="margin-bottom:8px" />
+        <input class="input" id="flight"   placeholder="Reys raqami (mas. SK0010)" style="margin-bottom:8px" />
+        <div class="form-row">
+          <select class="input" id="cls">
+            <option value="Platinum">👑 Platinum</option>
+            <option value="Gold">⭐ Gold</option>
+            <option value="Economy" selected>🎫 Economy</option>
+          </select>
+          <input class="input" id="nationality" placeholder="Millat" />
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="doCheckIn()">✅ Ro'yxatdan o'tish</button>
+      </div>
+
+      <!-- Boarding -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">🚶 Posadka — FIFO darvoza navbati</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input class="input" id="boardFlight" placeholder="Reys raqami" />
+          <button class="btn btn-success" onclick="boardNext()">Keyingisini chiqarish</button>
+        </div>
+        <button class="btn btn-ghost" style="width:100%" onclick="loadQueue()">↻ Navbatni yangilash</button>
+      </div>
+
+      <!-- Cargo -->
+      <div class="card">
+        <div class="card-title">🧳 Yuk bo'limi — LIFO stek</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input class="input" id="cargoItem" placeholder="Yuk tavsifi" />
+          <button class="btn btn-primary" onclick="loadCargo()">Yuklash</button>
+        </div>
+        <button class="btn btn-danger" style="width:100%;margin-bottom:8px" onclick="unloadCargo()">Tushirish (oxirgi)</button>
+        <button class="btn btn-ghost"  style="width:100%" onclick="refreshCargo()">↻ Stekni ko'rish</button>
+        <div id="cargoStack" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- Right: Live Queues -->
+    <div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="card-title" style="margin:0">📋 Ustuvorlik navbati — Jonli</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="badge badge-platinum">Platinum</span>
+            <span class="badge badge-gold">Gold</span>
+            <span class="badge badge-economy">Economy</span>
+          </div>
+        </div>
+        <div id="queueList" style="max-height:480px;overflow-y:auto">
+          <div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:20px">
+            Yuqoridagi maydonga reys raqamini kiriting va "Navbatni yangilash" tugmasini bosing
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/signalr.js"></script>
+<script src="/js/checkin.js"></script>
+</body>
+</html>

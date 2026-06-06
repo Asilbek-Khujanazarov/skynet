@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyNet — Boshqaruv paneli</title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media(max-width:900px){ .grid2,.grid3{ grid-template-columns:1fr; } }
+    canvas { max-height: 240px; }
+    .leaderboard-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .rank { width: 24px; font-weight: 700; color: var(--muted); font-size: 0.8rem; }
+    .rank-1,.rank-2,.rank-3 { color: var(--yellow); }
+    .bar-wrap { flex: 1; background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+    .bar-fill  { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.6s ease; }
+    .bench-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .bench-val { font-weight: 700; font-size: 1rem; color: var(--accent2); }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo">✈ SKYNET</span>
+  <a href="/">🗺 Xarita</a>
+  <a href="/dashboard.html" class="active">📊 Boshqaruv</a>
+  <a href="/search.html">🔍 Qidiruv</a>
+  <a href="/checkin.html">🎫 Ro'yxat</a>
+  <div class="nav-right"><span class="status-dot"></span></div>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <h1 style="font-size:1.2rem;font-weight:700">📊 Jonli boshqaruv paneli</h1>
+    <button class="btn btn-ghost" onclick="refresh()">↻ Yangilash</button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="stat-val" id="s-airports">—</div><div class="stat-lbl">Jami aeroportlar</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-flights">—</div><div class="stat-lbl">Jami reyslar</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-passengers">—</div><div class="stat-lbl">Yo'lovchilar</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-checkedin">—</div><div class="stat-lbl">Ro'yxatdan o'tgan</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-active">—</div><div class="stat-lbl">Faol reyslar</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-price">—</div><div class="stat-lbl">O'rtacha narx ($)</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <!-- Top 10 Airports -->
+    <div class="card">
+      <div class="card-title">🏆 Top 10 aeroport (foydalanish bo'yicha)</div>
+      <div id="leaderboard"></div>
+    </div>
+
+    <!-- Flight Price Distribution -->
+    <div class="card">
+      <div class="card-title">💰 Reys narxlari taqsimoti</div>
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <!-- Sort Benchmark -->
+    <div class="card">
+      <div class="card-title">⚡ Saralash sinovi — QuickSort vs MergeSort</div>
+      <div id="benchmarkResult">
+        <div style="color:var(--muted);font-size:0.82rem">Reys ma'lumotlari ustida saralash sinovini boshlash uchun tugmani bosing.</div>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="runBenchmark()">Sinovni boshlash</button>
+      </div>
+    </div>
+
+    <!-- Schedule Today -->
+    <div class="card">
+      <div class="card-title">📅 Bugungi jadval</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <select class="input" id="sortBy" style="flex:1">
+          <option value="departure">Jo'nash vaqti bo'yicha (QuickSort)</option>
+          <option value="fuel">Yoqilg'i samaradorligi bo'yicha (MergeSort)</option>
+        </select>
+        <button class="btn btn-ghost" onclick="loadSchedule()">Yuklash</button>
+      </div>
+      <div class="table-wrap" style="max-height:220px;overflow-y:auto">
+        <table>
+          <thead><tr><th>Reys</th><th>Yo'nalish</th><th>Jo'nash</th><th>Narx</th><th>Holat</th></tr></thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/signalr.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

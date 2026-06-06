@@ -1,0 +1,92 @@
+## .NET / ASP.NET Core
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+*.docx
+CLAUDE.md
+
+## Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Visual Studio
+.vs/
+*.cache
+*.pidb
+*.swp
+*.pch
+*.VC.db
+*.VC.opendb
+*.sdf
+*.opensdf
+*.suo
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+## VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## Rider
+.idea/
+*.sln.iml
+
+## Publish
+publish/
+PublishProfiles/
+
+## Application-specific
+appsettings.Development.json
+appsettings.local.json
+appsettings.*.local.json
+
+## OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+## Logs
+*.log
+logs/
+
+## dotnet tools
+.config/
