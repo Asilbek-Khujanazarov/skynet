@@ -115,6 +115,18 @@ public class PassengerController : ControllerBase
         catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
     }
 
+    // GET /api/boarding/gate?flight=SK0010
+    [HttpGet("boarding/gate")]
+    public async Task<IActionResult> GetBoardingGate([FromQuery] string flight)
+    {
+        try
+        {
+            var gate = await _service.GetBoardingGateAsync(flight);
+            return Ok(gate.Select(ToDto));
+        }
+        catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
+    }
+
     // POST /api/cargo/load
     [HttpPost("cargo/load")]
     public async Task<IActionResult> LoadCargo([FromBody] CargoRequest req)

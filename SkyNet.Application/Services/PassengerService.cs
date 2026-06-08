@@ -95,7 +95,19 @@ public class PassengerService : IPassengerService
         await EnsureIndexedAsync();
         var queue = _checkInQueues.Get(flightNumber);
         if (queue == null) return new List<Passenger>();
-        return queue.ToArray().ToList();
+        // Sort by priority desc (Platinum=3 first), then by check-in time asc (FIFO within same class)
+        return queue.ToArray()
+                    .OrderByDescending(p => p.Priority)
+                    .ThenBy(p => p.CheckInTime)
+                    .ToList();
+    }
+
+    public async Task<List<Passenger>> GetBoardingGateAsync(string flightNumber)
+    {
+        await EnsureIndexedAsync();
+        var gate = _boardingQueues.Get(flightNumber);
+        if (gate == null) return new List<Passenger>();
+        return gate.ToArray().ToList();
     }
 
     public async Task<Passenger?> LookupByPNRAsync(string pnr)

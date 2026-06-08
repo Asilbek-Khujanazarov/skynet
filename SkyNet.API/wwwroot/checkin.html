@@ -126,23 +126,45 @@
       </div>
     </div>
 
-    <!-- Right: Live Queue -->
-    <div>
+    <!-- Right: Live Queue + Boarding Gate -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Priority Queue — check-in navbati -->
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="card-title" style="margin:0">📋 Ustuvorlik navbati — Jonli</div>
+          <div class="card-title" style="margin:0">&#x1F4CB; Ustuvorlik navbati (MaxHeap + PriorityQueue)</div>
           <div style="display:flex;gap:6px;align-items:center">
             <span class="badge badge-platinum">Platinum</span>
             <span class="badge badge-gold">Gold</span>
             <span class="badge badge-economy">Economy</span>
           </div>
         </div>
-        <div id="queueList" style="max-height:480px;overflow-y:auto">
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">
+          Posadka kutayotgan yo'lovchilar — Platinum birinchi chiqadi
+        </div>
+        <div id="queueList" style="max-height:220px;overflow-y:auto">
           <div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:20px">
             Reys raqamini kiriting va "Navbatni yangilash" tugmasini bosing
           </div>
         </div>
       </div>
+
+      <!-- Circular Queue (FIFO) — darvozadan o'tganlar -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="card-title" style="margin:0">&#x1F6AA; Darvoza navbati (CircularQueue — FIFO)</div>
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:4px 8px" onclick="loadBoardingGate()">&#x21BB; Yangilash</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">
+          "Keyingisini chiqarish" — PriorityQueue'dan olib, FIFO darvozaga kiritadi
+        </div>
+        <div id="gateList" style="max-height:220px;overflow-y:auto">
+          <div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:20px">
+            Hali hech kim darvozadan o'tmagan
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>

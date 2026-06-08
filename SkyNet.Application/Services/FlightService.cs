@@ -14,8 +14,8 @@ public class FlightService : IFlightService
     private readonly AirportRepository  _airportRepo;
     private readonly PassengerRepository _passengerRepo;
 
-    // DSA structures
-    private readonly AVLTree<double, Flight>   _priceTree   = new();
+    // DSA structures — composite key (price * 100000 + id) prevents duplicate-key overwrite
+    private readonly AVLTree<long, Flight>     _priceTree   = new();
     private readonly BinarySearchTree<string, Flight> _flightBST = new();
     private readonly TrieTree                   _airportTrie = new();
     private readonly LRUCache<string, Flight>   _flightCache = new(200);
@@ -37,10 +37,10 @@ public class FlightService : IFlightService
         var flights  = await _flightRepo.GetAllAsync();
         var airports = await _airportRepo.GetAllAsync();
 
-        // Index flights into AVLTree (by price) and BST (by flight number)
+        // Index flights into AVLTree (by price+id composite key) and BST (by flight number)
         foreach (var f in flights)
         {
-            _priceTree.Insert(f.Price, f);
+            _priceTree.Insert(PriceKey(f), f);
             _flightBST.Insert(f.FlightNumber, f);
         }
 
@@ -72,7 +72,12 @@ public class FlightService : IFlightService
     public async Task<List<Flight>> SearchByPriceRangeAsync(double minPrice, double maxPrice)
     {
         await EnsureInitializedAsync();
-        return _priceTree.RangeQuery(minPrice, maxPrice).ToList();
+        // Composite key: price*100000 + id — range covers all ids at each price level
+        long keyMin = (long)(minPrice * 100000);
+        long keyMax = (long)(maxPrice * 100000) + 99999;
+        return _priceTree.RangeQuery(keyMin, keyMax)
+                         .OrderBy(f => f.Price)
+                         .ToList();
     }
 
     public async Task<List<Flight>> SearchByFlightNumberAsync(string query)
@@ -139,7 +144,7 @@ public class FlightService : IFlightService
 
         var saved = await _flightRepo.AddAsync(flight);
         _flightBST.Insert(saved.FlightNumber, saved);
-        _priceTree.Insert(saved.Price, saved);
+        _priceTree.Insert(PriceKey(saved), saved);
         return saved;
     }
 
@@ -154,6 +159,9 @@ public class FlightService : IFlightService
         if (Enum.TryParse<Domain.Enums.FlightStatus>(status, true, out var s))
             await _flightRepo.UpdateStatusAsync(flightNumber, s);
     }
+
+    // Composite key: keeps same-price flights separate in AVL tree
+    private static long PriceKey(Flight f) => (long)(f.Price * 100000) + (f.Id % 100000);
 
     public async Task<List<Airport>> GetTopAirportsAsync(int count = 10)
         => await _airportRepo.GetTopAsync(count);

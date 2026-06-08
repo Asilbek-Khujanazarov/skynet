@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyNet вЂ” Qidiruv</title>
+  <title>SkyNet — Qidiruv</title>
   <link rel="stylesheet" href="/css/app.css" />
   <style>
     .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -40,24 +40,24 @@
 </head>
 <body>
 <nav class="nav">
-  <span class=”nav-logo”>✈ SKYNET</span>
-  <a href=”/”>🗺 Xarita</a>
-  <a href=”/flights.html”>✈ Reyslar</a>
-  <a href=”/dashboard.html”>📊 Boshqaruv</a>
-  <a href=”/search.html” class=”active”>🔍 Qidiruv</a>
-  <a href="/checkin.html">🎫 Ro'yxat</a>
+  <span class="nav-logo">&#x2708; SKYNET</span>
+  <a href="/">&#x1F5FA; Xarita</a>
+  <a href="/flights.html">&#x2708; Reyslar</a>
+  <a href="/dashboard.html">&#x1F4CA; Boshqaruv</a>
+  <a href="/search.html" class="active">&#x1F50D; Qidiruv</a>
+  <a href="/checkin.html">&#x1F3AB; Ro'yxat</a>
   <div class="nav-right"><span class="status-dot"></span></div>
 </nav>
 
 <div class="page">
 <div class="container">
-  <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:20px">рџ”Ќ Qidiruv va marshrut topish</h1>
+  <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:20px">&#x1F50D; Qidiruv va marshrut topish</h1>
 
   <div class="search-grid">
 
     <!-- Route Finder -->
     <div class="card">
-      <div class="card-title">вњ€ Dijkstra marshrut topish</div>
+      <div class="card-title">&#x2708; Dijkstra marshrut topish</div>
       <div class="ac-wrap">
         <input class="input" id="acFrom" placeholder="Qayerdan (nom yoki IATA)" oninput="mapAC('acFrom','acFromDrop')" autocomplete="off" />
         <div class="ac-dropdown" id="acFromDrop" style="display:none"></div>
@@ -72,7 +72,7 @@
 
     <!-- PNR Lookup -->
     <div class="card">
-      <div class="card-title">рџЄЄ Yo'lovchi qidirish вЂ” HashTable O(1)</div>
+      <div class="card-title">&#x1FA94; Yo'lovchi qidirish &#x2014; HashTable O(1)</div>
       <input class="input" id="pnrInput" placeholder="PNR (mas. SKY-100000)" style="margin-bottom:8px" />
       <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="lookupPNR()">PNR bo'yicha qidirish</button>
       <input class="input" id="passportInput" placeholder="Pasport raqami" style="margin-bottom:8px" />
@@ -82,7 +82,7 @@
 
     <!-- Price Range -->
     <div class="card">
-      <div class="card-title">рџ’° Narx bo'yicha qidirish вЂ” AVL Tree O(log n)</div>
+      <div class="card-title">&#x1F4B0; Narx bo'yicha qidirish &#x2014; AVL Tree O(log n)</div>
       <div style="display:flex;gap:8px;margin-bottom:8px">
         <input class="input" id="priceMin" type="number" placeholder="Min $" value="100" />
         <input class="input" id="priceMax" type="number" placeholder="Max $" value="500" />
@@ -98,7 +98,7 @@
 
     <!-- Emergency Reroute -->
     <div class="card">
-      <div class="card-title">рџљЁ Favqulodda qayta yo'naltirish вЂ” Backtracking</div>
+      <div class="card-title">&#x1F6A8; Favqulodda qayta yo'naltirish &#x2014; Backtracking</div>
       <div class="ac-wrap">
         <input class="input" id="reFrom" placeholder="Qayerdan (nom yoki IATA)" oninput="mapAC('reFrom','reFromDrop')" autocomplete="off" />
         <div class="ac-dropdown" id="reFromDrop" style="display:none"></div>
@@ -135,7 +135,7 @@ async function mapAC(inputId, dropId) {
       const results = await API.airports.search(q);
       if (!results || !results.length) { drop.style.display = 'none'; return; }
       drop.innerHTML = results.map(a => {
-        const label = (a.name.length > 26 ? a.name.slice(0,26)+'вЂ¦' : a.name) + ' вЂ” ' + a.city;
+        const label = (a.name.length > 26 ? a.name.slice(0,26)+'...' : a.name) + ' — ' + a.city;
         return `<div class="ac-item" onmousedown="pickAC('${inputId}','${dropId}','${a.iataCode}')">
           <span class="ac-code">${a.iataCode}</span>
           <span style="color:#94a3b8">${label}</span>
@@ -171,12 +171,12 @@ async function searchRoute() {
       <div class="result-card">
         <div style="font-size:0.75rem;color:var(--muted)">Algoritm: ${r.algorithm}</div>
         <div style="margin:6px 0;font-size:0.9rem">
-          <b>${Math.round(r.totalDistance).toLocaleString()} km</b> &nbsp;В·&nbsp;
-          <b>$${Math.round(r.totalCost)}</b> &nbsp;В·&nbsp;
+          <b>${Math.round(r.totalDistance).toLocaleString()} km</b> &nbsp;&middot;&nbsp;
+          <b>$${Math.round(r.totalCost)}</b> &nbsp;&middot;&nbsp;
           <b>${r.stops} to'xtash</b>
         </div>
         <div class="path-display">
-          ${r.path.map((n,i) => `${i>0?'<span class="path-arrow">в†’</span>':''}<span class="path-node">${n}</span>`).join('')}
+          ${r.path.map((n,i) => `${i>0?'<span class="path-arrow">&#x2192;</span>':''}<span class="path-node">${n}</span>`).join('')}
         </div>
       </div>
     `;
@@ -211,8 +211,8 @@ function showPassenger(p) {
       <div class="pnr-row"><span>Pasport</span><span>${p.passportId}</span></div>
       <div class="pnr-row"><span>Reys</span><span>${p.flightNumber}</span></div>
       <div class="pnr-row"><span>Millat</span><span>${p.nationality}</span></div>
-      <div class="pnr-row"><span>Ro'yxatdan o'tgan</span><span>${p.isCheckedIn ? 'вњ…' : 'вќЊ'}</span></div>
-      <div class="pnr-row" style="border:none"><span>Samolotga chiqdi</span><span>${p.isBoarded ? 'вњ…' : 'вќЊ'}</span></div>
+      <div class="pnr-row"><span>Ro'yxatdan o'tgan</span><span>${p.isCheckedIn ? '&#x2705;' : '&#x274C;'}</span></div>
+      <div class="pnr-row" style="border:none"><span>Samolotga chiqdi</span><span>${p.isBoarded ? '&#x2705;' : '&#x274C;'}</span></div>
     </div>
   `;
 }
@@ -225,7 +225,7 @@ async function searchByPrice() {
     document.getElementById('priceResults').innerHTML = flights.slice(0,30).map(f => `
       <tr>
         <td><b>${f.flightNumber}</b></td>
-        <td>${f.originIata} в†’ ${f.destinationIata}</td>
+        <td>${f.originIata} &#x2192; ${f.destinationIata}</td>
         <td><b>$${Math.round(f.price)}</b></td>
         <td><span class="badge badge-active">${f.status}</span></td>
       </tr>
@@ -238,7 +238,7 @@ async function findAlternatives() {
   const from   = document.getElementById('reFrom').value.trim().toUpperCase().slice(0,3);
   const to     = document.getElementById('reTo').value.trim().toUpperCase().slice(0,3);
   const closed = document.getElementById('reClosed').value.trim().toUpperCase().slice(0,3);
-  if (!from || !to || !closed) { toast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  if (!from || !to || !closed) { toast("Barcha maydonlarni to'ldiring", 'error'); return; }
   try {
     const r = await API.flights.reroute({ from, to, closedAirport: closed });
     const el = document.getElementById('rerouteResult');
@@ -246,9 +246,9 @@ async function findAlternatives() {
       <div style="margin-bottom:8px;font-size:0.82rem;color:var(--muted)">${r.totalAlternatives} ta muqobil marshrut topildi</div>
       ${r.routes.slice(0,5).map((rt,i) => `
         <div class="result-card" style="margin-bottom:8px">
-          <div style="font-size:0.75rem;color:var(--muted)">Variant ${i+1} вЂ” ${rt.hops} oraliq</div>
+          <div style="font-size:0.75rem;color:var(--muted)">Variant ${i+1} &#x2014; ${rt.hops} oraliq</div>
           <div class="path-display" style="margin-top:6px">
-            ${rt.path.map((n,j) => `${j>0?'<span class="path-arrow">в†’</span>':''}<span class="path-node">${n}</span>`).join('')}
+            ${rt.path.map((n,j) => `${j>0?'<span class="path-arrow">&#x2192;</span>':''}<span class="path-node">${n}</span>`).join('')}
           </div>
         </div>
       `).join('')}
@@ -256,13 +256,6 @@ async function findAlternatives() {
     toast(`Favqulodda qayta yo'naltirish: ${r.totalAlternatives} ta marshrut`, 'error');
   } catch(e) { toast(e.message, 'error'); }
 }
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.autocomplete-item')) {
-    document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display='none');
-  }
-});
 </script>
 </body>
 </html>
-

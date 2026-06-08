@@ -54,6 +54,7 @@ const API = {
     getByPassport: (id)        => API.get(`/api/passengers/passport/${id}`),
     checkIn:       (data)      => API.post('/api/checkin', data),
     getQueue:      (flight)    => API.get(`/api/boarding/queue?flight=${flight}`),
+    getBoardingGate: (flight) => API.get(`/api/boarding/gate?flight=${flight}`),
     boardNext:     (flight)    => API.post(`/api/boarding/next?flight=${flight}`, {}),
     loadCargo:     (item)      => API.post('/api/cargo/load', { item }),
     unloadCargo:   ()          => API.post('/api/cargo/unload', {}),

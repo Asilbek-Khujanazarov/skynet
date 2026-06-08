@@ -109,22 +109,24 @@ async function loadQueue() {
     const el    = document.getElementById('queueList');
 
     if (!queue.length) {
-      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Navbat bo\'sh.</div>';
-      return;
+      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Navbat bo\'sh — barcha yo\'lovchilar darvozadan o\'tdi yoki hali ro\'yxatdan o\'tmagan.</div>';
+    } else {
+      el.innerHTML = queue.map((p, i) => `
+        <div class="queue-card ${p.ticketClass.toLowerCase()}">
+          <div class="queue-pos">#${i+1}</div>
+          <div>
+            <div class="queue-name">${p.fullName}</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${p.pnr} &middot; ${p.flightNumber}</div>
+          </div>
+          <div style="margin-left:auto">
+            <span class="badge badge-${p.ticketClass.toLowerCase()}">${p.ticketClass}</span>
+          </div>
+        </div>
+      `).join('');
     }
 
-    el.innerHTML = queue.map((p, i) => `
-      <div class="queue-card ${p.ticketClass.toLowerCase()}">
-        <div class="queue-pos">#${i+1}</div>
-        <div>
-          <div class="queue-name">${p.fullName}</div>
-          <div style="font-size:0.72rem;color:var(--muted)">${p.pnr} · ${p.flightNumber}</div>
-        </div>
-        <div style="margin-left:auto">
-          <span class="badge badge-${p.ticketClass.toLowerCase()}">${p.ticketClass}</span>
-        </div>
-      </div>
-    `).join('');
+    // Always also refresh the FIFO gate panel
+    await loadBoardingGate();
   } catch(e) { toast('Navbat xatoligi: ' + e.message, 'error'); }
 }
 
@@ -134,9 +136,36 @@ async function boardNext() {
   try {
     const p = await API.passengers.boardNext(flight);
     if (p && p.fullName)
-      toast(`🚶 ${p.fullName} [${p.ticketClass}] posadkaga o'tdi!`, 'success');
+      toast(`&#x1F6B6; ${p.fullName} [${p.ticketClass}] posadkaga o'tdi!`, 'success');
+    // Refresh both queues
     await loadQueue();
+    await loadBoardingGate();
   } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadBoardingGate() {
+  const flight = document.getElementById('boardFlight').value.trim().toUpperCase();
+  if (!flight) return;
+  try {
+    const gate = await API.passengers.getBoardingGate(flight);
+    const el   = document.getElementById('gateList');
+    if (!gate.length) {
+      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:0.82rem">Hali hech kim darvozadan o\'tmagan</div>';
+      return;
+    }
+    el.innerHTML = gate.map((p, i) => `
+      <div class="queue-card" style="border-left-color:#22c55e">
+        <div class="queue-pos">${i + 1}</div>
+        <div>
+          <div class="queue-name">${p.fullName}</div>
+          <div style="font-size:0.72rem;color:var(--muted)">${p.pnr} &middot; FIFO tartib</div>
+        </div>
+        <div style="margin-left:auto">
+          <span class="badge badge-${p.ticketClass.toLowerCase()}">${p.ticketClass}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
 }
 
 async function loadCargo() {
