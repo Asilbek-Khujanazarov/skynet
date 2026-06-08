@@ -105,6 +105,56 @@ public class FlightService : IFlightService
         return flight;
     }
 
+    public async Task<List<Flight>> GetAllFlightsAsync()
+        => await _flightRepo.GetAllAsync();
+
+    public async Task<Flight> CreateFlightAsync(Application.DTOs.CreateFlightRequest req)
+    {
+        await EnsureInitializedAsync();
+        var all = await _flightRepo.GetAllAsync();
+        var nextNum = all.Count + 1;
+        var fn = $"SK{nextNum:D4}";
+        while (all.Any(f => f.FlightNumber == fn)) { nextNum++; fn = $"SK{nextNum:D4}"; }
+
+        // Estimate distance if not provided
+        double dist = req.Distance > 0 ? req.Distance : 1000;
+        var speed = 850.0;
+        var durationH = dist / speed;
+        var arrival = req.DepartureTime.AddHours(durationH);
+
+        var flight = new Flight
+        {
+            FlightNumber    = fn,
+            OriginIata      = req.OriginIata.ToUpper(),
+            DestinationIata = req.DestinationIata.ToUpper(),
+            DepartureTime   = req.DepartureTime,
+            ArrivalTime     = arrival,
+            Price           = req.Price > 0 ? req.Price : Math.Round(dist * 0.06, 2),
+            Distance        = dist,
+            FuelEfficiency  = 3.0 + Random.Shared.NextDouble() * 2.0,
+            Status          = Domain.Enums.FlightStatus.Scheduled,
+            SeatsTotal      = req.SeatsTotal,
+            SeatsAvailable  = req.SeatsTotal
+        };
+
+        var saved = await _flightRepo.AddAsync(flight);
+        _flightBST.Insert(saved.FlightNumber, saved);
+        _priceTree.Insert(saved.Price, saved);
+        return saved;
+    }
+
+    public async Task DeleteFlightAsync(string flightNumber)
+    {
+        await _flightRepo.DeleteAsync(flightNumber);
+        _initialized = false; // force re-index
+    }
+
+    public async Task UpdateStatusAsync(string flightNumber, string status)
+    {
+        if (Enum.TryParse<Domain.Enums.FlightStatus>(status, true, out var s))
+            await _flightRepo.UpdateStatusAsync(flightNumber, s);
+    }
+
     public async Task<List<Airport>> GetTopAirportsAsync(int count = 10)
         => await _airportRepo.GetTopAsync(count);
 

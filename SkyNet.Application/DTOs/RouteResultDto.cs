@@ -24,6 +24,21 @@ public class MSTResultDto
     public int EdgeCount { get; set; }
 }
 
+public class CreateFlightRequest
+{
+    public string OriginIata { get; set; } = string.Empty;
+    public string DestinationIata { get; set; } = string.Empty;
+    public DateTime DepartureTime { get; set; }
+    public double Price { get; set; }
+    public double Distance { get; set; }
+    public int SeatsTotal { get; set; } = 180;
+}
+
+public class UpdateStatusRequest
+{
+    public string Status { get; set; } = string.Empty;
+}
+
 public class RerouteRequest
 {
     public string From { get; set; } = string.Empty;

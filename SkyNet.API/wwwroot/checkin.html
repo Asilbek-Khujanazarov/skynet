@@ -17,7 +17,7 @@
     .queue-card.platinum { border-color: #c084fc; }
     .queue-card.gold     { border-color: #fbbf24; }
     .queue-card.economy  { border-color: #475569; }
-    .queue-pos { font-weight: 700; color: var(--muted); width: 20px; font-size: 0.8rem; }
+    .queue-pos  { font-weight: 700; color: var(--muted); width: 20px; font-size: 0.8rem; }
     .queue-name { flex: 1; font-weight: 600; font-size: 0.85rem; }
     .cargo-item {
       display: flex; align-items: center; gap: 8px;
@@ -25,19 +25,30 @@
       border-radius: 6px; margin-bottom: 4px; font-size: 0.82rem;
     }
     .cargo-pos { color: var(--muted); font-size: 0.75rem; width: 20px; }
-    .section-title {
-      font-size: 0.78rem; font-weight: 600; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      margin: 16px 0 8px;
-    }
     .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
     .form-row .input { flex: 1; }
+    .fn-wrap { position: relative; margin-bottom: 8px; }
+    .fn-drop {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 9999;
+      background: #1e2733; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; max-height: 200px; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .fn-item {
+      padding: 7px 12px; cursor: pointer; font-size: 0.79rem;
+      display: flex; gap: 10px; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .fn-item:hover { background: rgba(37,99,235,0.25); }
+    .fn-num   { font-weight: 700; color: #0ea5e9; min-width: 56px; }
+    .fn-route { color: #94a3b8; }
   </style>
 </head>
 <body>
 <nav class="nav">
   <span class="nav-logo">✈ SKYNET</span>
   <a href="/">🗺 Xarita</a>
+  <a href="/flights.html">✈ Reyslar</a>
   <a href="/dashboard.html">📊 Boshqaruv</a>
   <a href="/search.html">🔍 Qidiruv</a>
   <a href="/checkin.html" class="active">🎫 Ro'yxat</a>
@@ -52,6 +63,18 @@
 
     <!-- Left: Forms -->
     <div>
+
+      <!-- Flight Search -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">🔍 Reys qidirish — KMP algoritmi</div>
+        <div class="fn-wrap">
+          <input class="input" id="flightSearch" placeholder="Reys raqami yozing (mas. SK001)" autocomplete="off"
+            oninput="searchFlights()" />
+          <div class="fn-drop" id="flightSearchDrop" style="display:none"></div>
+        </div>
+        <div id="flightSearchResult" style="margin-top:8px"></div>
+      </div>
+
       <!-- Check-in Form -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">👤 Yo'lovchi ro'yxati — Ustuvorlik navbati (MaxHeap)</div>
@@ -60,7 +83,11 @@
           <input class="input" id="lname" placeholder="Familiya" />
         </div>
         <input class="input" id="passport" placeholder="Pasport raqami" style="margin-bottom:8px" />
-        <input class="input" id="flight"   placeholder="Reys raqami (mas. SK0010)" style="margin-bottom:8px" />
+        <div class="fn-wrap">
+          <input class="input" id="flight" placeholder="Reys raqami (mas. SK0010)" autocomplete="off"
+            oninput="fnAC('flight','flightDrop')" />
+          <div class="fn-drop" id="flightDrop" style="display:none"></div>
+        </div>
         <div class="form-row">
           <select class="input" id="cls">
             <option value="Platinum">👑 Platinum</option>
@@ -75,8 +102,12 @@
       <!-- Boarding -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🚶 Posadka — FIFO darvoza navbati</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input class="input" id="boardFlight" placeholder="Reys raqami" />
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start">
+          <div class="fn-wrap" style="flex:1;margin-bottom:0">
+            <input class="input" id="boardFlight" placeholder="Reys raqami" autocomplete="off"
+              oninput="fnAC('boardFlight','boardFlightDrop')" />
+            <div class="fn-drop" id="boardFlightDrop" style="display:none"></div>
+          </div>
           <button class="btn btn-success" onclick="boardNext()">Keyingisini chiqarish</button>
         </div>
         <button class="btn btn-ghost" style="width:100%" onclick="loadQueue()">↻ Navbatni yangilash</button>
@@ -95,7 +126,7 @@
       </div>
     </div>
 
-    <!-- Right: Live Queues -->
+    <!-- Right: Live Queue -->
     <div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -108,7 +139,7 @@
         </div>
         <div id="queueList" style="max-height:480px;overflow-y:auto">
           <div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:20px">
-            Yuqoridagi maydonga reys raqamini kiriting va "Navbatni yangilash" tugmasini bosing
+            Reys raqamini kiriting va "Navbatni yangilash" tugmasini bosing
           </div>
         </div>
       </div>

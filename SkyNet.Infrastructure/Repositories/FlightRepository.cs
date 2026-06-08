@@ -47,4 +47,23 @@ public class FlightRepository
         f.Status = status;
         await ctx.SaveChangesAsync();
     }
+
+    public async Task<Flight> AddAsync(Flight flight)
+    {
+        await using var ctx = await _factory.CreateDbContextAsync();
+        var maxId = ctx.Flights.Any() ? ctx.Flights.Max(f => f.Id) : 0;
+        flight.Id = maxId + 1;
+        ctx.Flights.Add(flight);
+        await ctx.SaveChangesAsync();
+        return flight;
+    }
+
+    public async Task DeleteAsync(string flightNumber)
+    {
+        await using var ctx = await _factory.CreateDbContextAsync();
+        var f = await ctx.Flights.FirstOrDefaultAsync(f => f.FlightNumber == flightNumber.ToUpper());
+        if (f == null) return;
+        ctx.Flights.Remove(f);
+        await ctx.SaveChangesAsync();
+    }
 }

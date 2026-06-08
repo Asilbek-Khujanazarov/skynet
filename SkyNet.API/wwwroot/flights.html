@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyNet — Reyslar</title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    .ac-wrap { position: relative; }
+    .ac-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 9999;
+      background: #1e2733; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; max-height: 180px; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .ac-item {
+      padding: 7px 10px; cursor: pointer; font-size: 0.79rem;
+      display: flex; gap: 8px; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .ac-item:hover { background: rgba(37,99,235,0.25); }
+    .ac-code { font-weight: 700; color: #0ea5e9; min-width: 34px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .status-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .status-Scheduled  { background: rgba(37,99,235,0.2);  color: #60a5fa; }
+    .status-Boarding   { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .status-Departed   { background: rgba(34,197,94,0.2);  color: #4ade80; }
+    .status-InFlight   { background: rgba(139,92,246,0.2); color: #a78bfa; }
+    .status-Landed     { background: rgba(20,184,166,0.2); color: #2dd4bf; }
+    .status-Cancelled  { background: rgba(239,68,68,0.2);  color: #f87171; }
+    .status-Delayed    { background: rgba(249,115,22,0.2); color: #fb923c; }
+    .status-Emergency  { background: rgba(239,68,68,0.4);  color: #fca5a5; }
+    .pagination { display: flex; gap: 6px; align-items: center; margin-top: 12px; }
+    .page-btn { padding: 4px 10px; border-radius: 5px; background: var(--bg3); border: 1px solid var(--border); cursor: pointer; color: var(--text); font-size: 0.8rem; }
+    .page-btn:hover { background: var(--accent); }
+    .page-btn.active { background: var(--accent); }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo">✈ SKYNET</span>
+  <a href="/">🗺 Xarita</a>
+  <a href="/dashboard.html">📊 Boshqaruv</a>
+  <a href="/flights.html" class="active">✈ Reyslar</a>
+  <a href="/search.html">🔍 Qidiruv</a>
+  <a href="/checkin.html">🎫 Ro'yxat</a>
+  <div class="nav-right"><span class="status-dot"></span><span id="totalCount" style="color:var(--muted);font-size:0.75rem">Yuklanmoqda...</span></div>
+</nav>
+
+<div class="page">
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h1 style="font-size:1.2rem;font-weight:700">✈ Reyslar boshqaruvi</h1>
+    <button class="btn btn-primary" onclick="toggleForm()">+ Yangi reys qo'shish</button>
+  </div>
+
+  <!-- Create Flight Form -->
+  <div class="card" id="createForm" style="margin-bottom:16px;display:none">
+    <div class="card-title">✈ Yangi reys yaratish</div>
+    <div class="form-grid">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">Qayerdan *</div>
+        <div class="ac-wrap">
+          <input class="input" id="newFrom" placeholder="IATA kodi (TAS, LHR...)" autocomplete="off" oninput="mapAC('newFrom','newFromDrop')" />
+          <div class="ac-dropdown" id="newFromDrop" style="display:none"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">Qayerga *</div>
+        <div class="ac-wrap">
+          <input class="input" id="newTo" placeholder="IATA kodi (LHR, JFK...)" autocomplete="off" oninput="mapAC('newTo','newToDrop')" />
+          <div class="ac-dropdown" id="newToDrop" style="display:none"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">Jo'nash vaqti *</div>
+        <input class="input" id="newDep" type="datetime-local" />
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">Narx ($)</div>
+        <input class="input" id="newPrice" type="number" placeholder="Avtomatik hisoblanadi" min="0" />
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">Masofa (km)</div>
+        <input class="input" id="newDist" type="number" placeholder="Avtomatik hisoblanadi" min="0" />
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">O'rindiqlar soni</div>
+        <input class="input" id="newSeats" type="number" value="180" min="1" max="500" />
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="createFlight()">✅ Reys yaratish</button>
+      <button class="btn btn-ghost"   onclick="toggleForm()">Bekor qilish</button>
+    </div>
+    <div id="createResult" style="margin-top:8px"></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input class="input" id="searchInput" placeholder="Reys raqami, IATA, holat bo'yicha qidirish..." style="flex:1;min-width:200px"
+        oninput="onSearch()" />
+      <select class="input" id="statusFilter" style="width:160px" onchange="onSearch()">
+        <option value="">Barcha holatlar</option>
+        <option value="Scheduled">Scheduled</option>
+        <option value="Boarding">Boarding</option>
+        <option value="Departed">Departed</option>
+        <option value="InFlight">InFlight</option>
+        <option value="Landed">Landed</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="Delayed">Delayed</option>
+      </select>
+      <button class="btn btn-ghost" onclick="loadFlights()">↻ Yangilash</button>
+    </div>
+  </div>
+
+  <!-- Flights Table -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reys #</th>
+            <th>Qayerdan</th>
+            <th>Qayerga</th>
+            <th>Jo'nash</th>
+            <th>Kelish</th>
+            <th>Narx</th>
+            <th>O'rindiq</th>
+            <th>Holat</th>
+            <th>Amal</th>
+          </tr>
+        </thead>
+        <tbody id="flightsBody">
+          <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">Yuklanmoqda...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
+</div>
+
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/signalr.js"></script>
+<script>
+let currentPage = 1;
+const pageSize  = 50;
+let totalFlights = 0;
+let searchTimer  = null;
+
+// ── Autocomplete ─────────────────────────────────────────────────
+let _acTimer = null;
+async function mapAC(inputId, dropId) {
+  const q    = document.getElementById(inputId).value.trim();
+  const drop = document.getElementById(dropId);
+  if (q.length < 1) { drop.style.display = 'none'; return; }
+  clearTimeout(_acTimer);
+  _acTimer = setTimeout(async () => {
+    try {
+      const r = await API.airports.search(q);
+      if (!r || !r.length) { drop.style.display = 'none'; return; }
+      drop.innerHTML = r.map(a => `
+        <div class="ac-item" onmousedown="pickAC('${inputId}','${dropId}','${a.iataCode}')">
+          <span class="ac-code">${a.iataCode}</span>
+          <span style="color:#94a3b8">${a.name.slice(0,28)} — ${a.city}</span>
+        </div>`).join('');
+      drop.style.display = 'block';
+    } catch(e) {}
+  }, 150);
+}
+function pickAC(inputId, dropId, iata) {
+  document.getElementById(inputId).value = iata;
+  document.getElementById(dropId).style.display = 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ac-wrap'))
+    document.querySelectorAll('.ac-dropdown').forEach(d => d.style.display = 'none');
+});
+
+// ── Load flights ─────────────────────────────────────────────────
+async function loadFlights(page = currentPage) {
+  currentPage = page;
+  const search = buildSearch();
+  try {
+    const r = await API.flights.getAll(page, pageSize, search);
+    totalFlights = r.total;
+    document.getElementById('totalCount').textContent = `${r.total} ta reys`;
+    renderTable(r.items);
+    renderPagination(r.total, page);
+  } catch(e) {
+    document.getElementById('flightsBody').innerHTML =
+      `<tr><td colspan="9" style="color:var(--red);text-align:center">${e.message}</td></tr>`;
+  }
+}
+
+function buildSearch() {
+  const s = document.getElementById('searchInput').value.trim();
+  const st = document.getElementById('statusFilter').value;
+  return st ? (s ? `${s} ${st}` : st) : s;
+}
+
+function onSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadFlights(1), 250);
+}
+
+function renderTable(flights) {
+  const tbody = document.getElementById('flightsBody');
+  if (!flights || !flights.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">Reys topilmadi</td></tr>';
+    return;
+  }
+  tbody.innerHTML = flights.map(f => {
+    const dep = new Date(f.departureTime);
+    const arr = new Date(f.arrivalTime);
+    const fmt = d => d.toLocaleString('uz-UZ', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    return `<tr>
+      <td><b style="color:#0ea5e9">${f.flightNumber}</b></td>
+      <td><b>${f.originIata}</b></td>
+      <td><b>${f.destinationIata}</b></td>
+      <td style="font-size:0.8rem">${fmt(dep)}</td>
+      <td style="font-size:0.8rem">${fmt(arr)}</td>
+      <td><b style="color:#22c55e">$${Math.round(f.price)}</b></td>
+      <td style="font-size:0.8rem">${f.seatsAvailable}</td>
+      <td><span class="status-badge status-${f.status}">${f.status}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <select onchange="changeStatus('${f.flightNumber}', this.value)" style="padding:2px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:0.72rem">
+            <option value="">Holat</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Boarding">Boarding</option>
+            <option value="Departed">Departed</option>
+            <option value="InFlight">InFlight</option>
+            <option value="Landed">Landed</option>
+            <option value="Delayed">Delayed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <button onclick="deleteFlight('${f.flightNumber}')"
+            style="padding:2px 6px;background:rgba(239,68,68,0.2);border:none;border-radius:4px;color:#f87171;cursor:pointer;font-size:0.72rem">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPagination(total, page) {
+  const pages = Math.ceil(total / pageSize);
+  const el = document.getElementById('pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = `<span style="font-size:0.8rem;color:var(--muted)">${total} ta / ${pages} sahifa</span>`;
+  if (page > 1) html += `<button class="page-btn" onclick="loadFlights(${page-1})">‹ Oldingi</button>`;
+  const start = Math.max(1, page-2), end = Math.min(pages, page+2);
+  for (let i = start; i <= end; i++)
+    html += `<button class="page-btn ${i===page?'active':''}" onclick="loadFlights(${i})">${i}</button>`;
+  if (page < pages) html += `<button class="page-btn" onclick="loadFlights(${page+1})">Keyingi ›</button>`;
+  el.innerHTML = html;
+}
+
+// ── Create flight ────────────────────────────────────────────────
+function toggleForm() {
+  const f = document.getElementById('createForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') {
+    const now = new Date(); now.setMinutes(0,0,0);
+    now.setHours(now.getHours() + 1);
+    document.getElementById('newDep').value = now.toISOString().slice(0,16);
+  }
+}
+
+async function createFlight() {
+  const from  = document.getElementById('newFrom').value.trim().toUpperCase().slice(0,3);
+  const to    = document.getElementById('newTo').value.trim().toUpperCase().slice(0,3);
+  const dep   = document.getElementById('newDep').value;
+  const price = parseFloat(document.getElementById('newPrice').value) || 0;
+  const dist  = parseFloat(document.getElementById('newDist').value) || 0;
+  const seats = parseInt(document.getElementById('newSeats').value) || 180;
+
+  if (!from || !to)  { toast('Qayerdan va qayerga kiritilsin', 'error'); return; }
+  if (!dep)          { toast('Jo\'nash vaqti kiritilsin', 'error'); return; }
+  if (from === to)   { toast('Qayerdan va qayerga bir xil bo\'lmasin', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Yaratilmoqda...';
+
+  try {
+    const f = await API.flights.create({ originIata: from, destinationIata: to,
+      departureTime: new Date(dep).toISOString(), price, distance: dist, seatsTotal: seats });
+    document.getElementById('createResult').innerHTML = `
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:10px;font-size:0.82rem">
+        ✅ <b>${f.flightNumber}</b> reysi yaratildi — ${f.originIata} → ${f.destinationIata} |
+        Jo'nash: ${new Date(f.departureTime).toLocaleString()} |
+        Narx: <b>$${Math.round(f.price)}</b>
+      </div>`;
+    toast(`${f.flightNumber} yaratildi!`, 'success');
+    // Reset form fields
+    ['newFrom','newTo','newPrice','newDist'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('newSeats').value = 180;
+    await loadFlights(1);
+  } catch(e) {
+    document.getElementById('createResult').innerHTML = `<div style="color:var(--red)">${e.message}</div>`;
+    toast('Xatolik: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '✅ Reys yaratish';
+  }
+}
+
+// ── Status change ────────────────────────────────────────────────
+async function changeStatus(fn, status) {
+  if (!status) return;
+  try {
+    await API.flights.updateStatus(fn, status);
+    toast(`${fn} → ${status}`, 'success');
+    await loadFlights();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Delete flight ────────────────────────────────────────────────
+async function deleteFlight(fn) {
+  if (!confirm(`${fn} reysini o'chirasizmi?`)) return;
+  try {
+    await API.flights.delete(fn);
+    toast(`${fn} o'chirildi`, 'info');
+    await loadFlights();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── SignalR ──────────────────────────────────────────────────────
+function onFlightStatusChanged(data) { loadFlights(); }
+
+// ── Init ─────────────────────────────────────────────────────────
+loadFlights();
+</script>
+</body>
+</html>

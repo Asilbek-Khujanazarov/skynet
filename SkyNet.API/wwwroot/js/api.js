@@ -41,7 +41,12 @@ const API = {
     bfs:         (start)    => API.get(`/api/flights/bfs?start=${start}`),
     dfs:         (start)    => API.get(`/api/flights/dfs?start=${start}`),
     getByFN:     (fn)       => API.get(`/api/flights/number/${fn}`),
+    search:      (q)        => API.get(`/api/flights/search?q=${encodeURIComponent(q)}`),
     byPrice:     (min, max) => API.get(`/api/flights/price?min=${min}&max=${max}`),
+    getAll:      (page=1, pageSize=50, search='') => API.get(`/api/flights/all?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}`),
+    create:      (data)     => API.post('/api/flights', data),
+    delete:      (fn)       => fetch(`/api/flights/${fn}`, { method: 'DELETE' }).then(r => r.json()),
+    updateStatus:(fn, status) => fetch(`/api/flights/${fn}/status`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status }) }).then(r => r.json()),
   },
 
   passengers: {

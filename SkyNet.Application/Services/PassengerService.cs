@@ -32,6 +32,14 @@ public class PassengerService : IPassengerService
         {
             _pnrIndex.Set(p.PNR, p);
             _passportIndex.Set(p.PassportId, p);
+
+            // Restore into priority queues so data survives page navigation
+            if (p.IsCheckedIn && !p.IsBoarded)
+            {
+                if (!_checkInQueues.ContainsKey(p.FlightNumber))
+                    _checkInQueues.Set(p.FlightNumber, new PriorityQueue<Passenger>(256));
+                _checkInQueues.Get(p.FlightNumber)!.Enqueue(p, p.Priority);
+            }
         }
         _indexed = true;
     }

@@ -1,3 +1,78 @@
+// ── Flight number autocomplete (KMP search) ──────────────────────
+let _fnTimer = null;
+async function fnAC(inputId, dropId) {
+  const q    = document.getElementById(inputId).value.trim().toUpperCase();
+  const drop = document.getElementById(dropId);
+  if (q.length < 2) { drop.style.display = 'none'; return; }
+  clearTimeout(_fnTimer);
+  _fnTimer = setTimeout(async () => {
+    try {
+      const results = await API.flights.search(q);
+      if (!results || !results.length) { drop.style.display = 'none'; return; }
+      drop.innerHTML = results.map(f => `
+        <div class="fn-item" onmousedown="pickFN('${inputId}','${dropId}','${f.flightNumber}')">
+          <span class="fn-num">${f.flightNumber}</span>
+          <span class="fn-route">${f.originIata} → ${f.destinationIata}</span>
+          <span style="margin-left:auto;color:#64748b;font-size:0.74rem">$${Math.round(f.price)}</span>
+        </div>
+      `).join('');
+      drop.style.display = 'block';
+    } catch(e) { drop.style.display = 'none'; }
+  }, 200);
+}
+
+function pickFN(inputId, dropId, flightNumber) {
+  document.getElementById(inputId).value = flightNumber;
+  document.getElementById(dropId).style.display = 'none';
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.fn-wrap')) {
+    document.querySelectorAll('.fn-drop').forEach(d => d.style.display = 'none');
+  }
+});
+
+// ── Flight search panel ───────────────────────────────────────────
+let _fsTimer = null;
+async function searchFlights() {
+  const q    = document.getElementById('flightSearch').value.trim().toUpperCase();
+  const drop = document.getElementById('flightSearchDrop');
+  const res  = document.getElementById('flightSearchResult');
+  if (q.length < 2) { drop.style.display = 'none'; res.innerHTML = ''; return; }
+  clearTimeout(_fsTimer);
+  _fsTimer = setTimeout(async () => {
+    try {
+      const flights = await API.flights.search(q);
+      if (!flights || !flights.length) { drop.style.display = 'none'; res.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">Reys topilmadi.</div>'; return; }
+      drop.style.display = 'none';
+      res.innerHTML = `
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${flights.length} ta reys topildi:</div>
+        <div style="max-height:180px;overflow-y:auto">
+          ${flights.map(f => `
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg3);border-radius:6px;margin-bottom:4px;cursor:pointer"
+              onclick="selectFlight('${f.flightNumber}')">
+              <span style="font-weight:700;color:#0ea5e9;min-width:60px">${f.flightNumber}</span>
+              <span style="color:#94a3b8">${f.originIata} → ${f.destinationIata}</span>
+              <span style="margin-left:auto;color:#22c55e;font-size:0.8rem">$${Math.round(f.price)}</span>
+              <span style="font-size:0.72rem;color:var(--muted)">${f.status}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } catch(e) { res.innerHTML = `<div style="color:var(--red)">${e.message}</div>`; }
+  }, 200);
+}
+
+function selectFlight(fn) {
+  document.getElementById('flight').value = fn;
+  document.getElementById('boardFlight').value = fn;
+  document.getElementById('flightSearch').value = fn;
+  document.getElementById('flightSearchResult').innerHTML =
+    `<div style="color:var(--green);font-size:0.82rem">✅ ${fn} tanlandi — ro'yxat formasi to'ldirildi</div>`;
+  toast(`${fn} tanlandi`, 'success');
+}
+
 // ── Check-in page logic ──────────────────────────────────────────
 async function doCheckIn() {
   const fname  = document.getElementById('fname').value.trim();
