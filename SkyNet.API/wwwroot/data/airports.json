@@ -58,7 +58,7 @@
   {"iata":"TBS","name":"Tbilisi International Airport","city":"Tbilisi","country":"Georgia","lat":41.6692,"lon":44.9547},
   {"iata":"EVN","name":"Zvartnots International Airport","city":"Yerevan","country":"Armenia","lat":40.1473,"lon":44.3959},
   {"iata":"ALA","name":"Almaty International Airport","city":"Almaty","country":"Kazakhstan","lat":43.3521,"lon":77.0405},
-  {"iata":"NQZ","name":"Nursultan Nazarbayev International Airport","city":"Nur-Sultan","country":"Kazakhstan","lat":51.0223,"lon":71.4669},
+  {"iata":"NQZ","name":"Nursultan Nazarbayev International Airport","city":"Astana","country":"Kazakhstan","lat":51.0223,"lon":71.4669},
   {"iata":"FRU","name":"Manas International Airport","city":"Bishkek","country":"Kyrgyzstan","lat":43.0612,"lon":74.4776},
   {"iata":"DYU","name":"Dushanbe International Airport","city":"Dushanbe","country":"Tajikistan","lat":38.5433,"lon":68.7750},
   {"iata":"ASB","name":"Ashgabat International Airport","city":"Ashgabat","country":"Turkmenistan","lat":37.9868,"lon":58.3610},
